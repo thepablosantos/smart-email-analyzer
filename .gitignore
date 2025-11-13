@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Variáveis de ambiente (contém API keys sensíveis)
+.env
+
+# Arquivos de upload (gerados pela aplicação)
+uploads/*
+
+# Sistema operacional
+.DS_Store
