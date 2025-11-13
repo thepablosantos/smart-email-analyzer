@@ -302,6 +302,12 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/static/<path:path>')
+def serve_static(path):
+    """Serve arquivos estáticos"""
+    return app.send_static_file(path)
+
+
 @app.route('/api/analyze', methods=['POST'])
 def analyze_email():
     """Endpoint para análise de email"""
