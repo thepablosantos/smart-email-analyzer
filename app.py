@@ -9,8 +9,12 @@ from dotenv import load_dotenv
 import openai
 
 # Carregar variáveis de ambiente
-load_dotenv()
+try:
+    load_dotenv()
+except Exception as e:
+    print(f"⚠️  Aviso ao carregar .env: {str(e)}")
 
+# Inicializar Flask app
 app = Flask(__name__)
 CORS(app)
 
@@ -24,9 +28,14 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
 # Configurar OpenAI
 openai_api_key = os.getenv('OPENAI_API_KEY')
-if openai_api_key:
-    client = openai.OpenAI(api_key=openai_api_key)
-else:
+try:
+    if openai_api_key:
+        client = openai.OpenAI(api_key=openai_api_key)
+    else:
+        client = None
+        print("⚠️  OPENAI_API_KEY não configurada - funcionalidades de IA não estarão disponíveis")
+except Exception as e:
+    print(f"⚠️  Erro ao configurar OpenAI: {str(e)}")
     client = None
 
 # Criar pasta de uploads se não existir (apenas em ambiente local)
@@ -365,7 +374,8 @@ def health():
 
 
 # Exportar app para Vercel
-handler = app
+# O Vercel procura por 'app' como variável exportada
+# Flask apps são automaticamente detectados pelo @vercel/python
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
