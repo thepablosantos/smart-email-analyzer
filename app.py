@@ -29,8 +29,10 @@ if openai_api_key:
 else:
     client = None
 
-# Criar pasta de uploads se não existir
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Criar pasta de uploads se não existir (apenas em ambiente local)
+# No Vercel, arquivos são temporários e não precisam ser salvos
+if not os.environ.get('VERCEL'):
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 def allowed_file(filename):
@@ -361,6 +363,9 @@ def health():
     """Endpoint de health check"""
     return jsonify({'status': 'ok', 'message': 'API está funcionando'})
 
+
+# Exportar app para Vercel
+handler = app
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
