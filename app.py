@@ -200,7 +200,6 @@ def classify_email_fallback(email_text):
         return "Improdutivo"
     
     # Se não conseguir determinar e não tem palavras-chave conhecidas, é improdutivo
-    # (mais seguro do que classificar texto aleatório como produtivo)
     if productive_count == 0 and unproductive_count == 0:
         return "Improdutivo"
     
