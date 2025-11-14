@@ -8,17 +8,14 @@ from io import BytesIO
 from dotenv import load_dotenv
 import openai
 
-# Carregar variáveis de ambiente
 try:
     load_dotenv()
 except Exception as e:
     print(f"⚠️  Aviso ao carregar .env: {str(e)}")
 
-# Inicializar Flask app
 app = Flask(__name__)
 CORS(app)
 
-# Configurações
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf'}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
@@ -26,7 +23,6 @@ MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
-# Configurar OpenAI
 openai_api_key = os.getenv('OPENAI_API_KEY')
 try:
     if openai_api_key:
@@ -38,8 +34,6 @@ except Exception as e:
     print(f"⚠️  Erro ao configurar OpenAI: {str(e)}")
     client = None
 
-# Criar pasta de uploads se não existir (apenas em ambiente local)
-# No Vercel, arquivos são temporários e não precisam ser salvos
 if not os.environ.get('VERCEL'):
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -64,7 +58,7 @@ def extract_text_from_pdf(file_content):
 
 def is_valid_text(text):
     """Valida se o texto contém palavras reais em português"""
-    # Lista básica de palavras comuns em português (stop words e palavras frequentes)
+
     common_words = [
         'o', 'a', 'os', 'as', 'um', 'uma', 'de', 'do', 'da', 'dos', 'das',
         'em', 'no', 'na', 'nos', 'nas', 'para', 'com', 'por', 'sobre',
@@ -83,14 +77,11 @@ def is_valid_text(text):
     if len(words) == 0:
         return False
     
-    # Contar quantas palavras são conhecidas
     known_words = sum(1 for word in words if word in common_words or len(word) > 3)
     
-    # Se menos de 30% das palavras são conhecidas ou o texto é muito curto sem palavras conhecidas
     if len(words) < 3:
         return False
     
-    # Se tem muitas palavras mas nenhuma conhecida, provavelmente é texto aleatório
     if len(words) >= 3 and known_words == 0:
         return False
     
@@ -132,21 +123,18 @@ Responda APENAS com uma das palavras: "Produtivo" ou "Improdutivo"."""
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=20  # Aumentei para garantir resposta completa
+            max_tokens=20
         )
         
         classification = response.choices[0].message.content.strip()
         
-        # Normalizar a resposta (case-insensitive)
         classification_lower = classification.lower()
         
-        # Garantir que a resposta seja uma das opções válidas
         if "improdutivo" in classification_lower:
             return "Improdutivo"
         elif "produtivo" in classification_lower:
             return "Produtivo"
         else:
-            # Se a resposta não for clara, usar fallback
             print(f"⚠️  Resposta da API não reconhecida: '{classification}', usando fallback")
             return classify_email_fallback(email_text)
             
@@ -158,15 +146,13 @@ Responda APENAS com uma das palavras: "Produtivo" ou "Improdutivo"."""
 
 
 def classify_email_fallback(email_text):
-    """Classificação fallback baseada em palavras-chave - melhorada"""
+    """Classificação fallback baseada em palavras-chave"""
     email_lower = email_text.lower()
     
-    # Primeiro: validar se o texto faz sentido
     if not is_valid_text(email_text):
-        # Texto inválido ou sem sentido deve ser considerado improdutivo
         return "Improdutivo"
     
-    # Palavras-chave produtivas (mais específicas)
+    # Palavras-chave produtivas
     productive_keywords = [
         'solicitação', 'solicito', 'pedido', 'preciso', 'necessito', 'requer',
         'suporte', 'ajuda', 'problema', 'erro', 'dúvida', 'questão', 'pergunta',
@@ -176,7 +162,7 @@ def classify_email_fallback(email_text):
         'reclamação', 'reclamo', 'cancelamento', 'alteração', 'mudança'
     ]
     
-    # Palavras-chave improdutivas (mais específicas e com maior peso)
+    # Palavras-chave improdutivas
     unproductive_keywords = [
         'feliz natal', 'feliz ano novo', 'feliz páscoa', 'feliz aniversário',
         'parabéns', 'felicitações', 'cumprimentos', 'saudações',
@@ -185,11 +171,9 @@ def classify_email_fallback(email_text):
         'desejo', 'desejos', 'votos', 'voto', 'sucesso', 'prosperidade'
     ]
     
-    # Contar ocorrências
     productive_count = sum(1 for keyword in productive_keywords if keyword in email_lower)
     unproductive_count = sum(1 for keyword in unproductive_keywords if keyword in email_lower)
     
-    # Verificar padrões específicos de emails improdutivos
     has_greeting_pattern = any(phrase in email_lower for phrase in [
         'feliz natal', 'feliz ano novo', 'parabéns', 'felicitações'
     ])
@@ -241,7 +225,7 @@ Email recebido:
 
 Gere uma resposta profissional em português brasileiro:"""
 
-        else:  # Improdutivo
+        else: 
             prompt = f"""Com base no seguinte email classificado como IMPRODUTIVO, gere uma resposta profissional e cordial para uma empresa financeira.
 
 O email deve receber uma resposta que:
@@ -312,7 +296,7 @@ def serve_static(path):
 def analyze_email():
     """Endpoint para análise de email"""
     try:
-        # Verificar se há arquivo ou texto direto
+
         if 'file' in request.files:
             file = request.files['file']
             
@@ -322,13 +306,11 @@ def analyze_email():
             if not allowed_file(file.filename):
                 return jsonify({'error': 'Formato de arquivo não suportado. Use .txt ou .pdf'}), 400
             
-            # Ler conteúdo do arquivo
             file_content = file.read()
-            
-            # Extrair texto baseado no tipo de arquivo
+
             if file.filename.endswith('.pdf'):
                 email_text = extract_text_from_pdf(file_content)
-            else:  # .txt
+            else: 
                 email_text = file_content.decode('utf-8')
         
         elif 'text' in request.json:
@@ -340,13 +322,11 @@ def analyze_email():
         if not email_text or len(email_text.strip()) == 0:
             return jsonify({'error': 'O conteúdo do email está vazio'}), 400
         
-        # Pré-processar texto
         processed_text = preprocess_text(email_text)
         
         if len(processed_text) < 10:
             return jsonify({'error': 'O texto do email é muito curto para análise'}), 400
         
-        # Validar se o texto faz sentido
         if not is_valid_text(processed_text):
             return jsonify({
                 'success': True,
@@ -356,10 +336,8 @@ def analyze_email():
                 'warning': 'Texto não reconhecido como email válido'
             })
         
-        # Classificar email
         classification = classify_email_with_ai(processed_text)
         
-        # Gerar resposta
         suggested_response = generate_response_with_ai(processed_text, classification)
         
         return jsonify({
@@ -378,10 +356,6 @@ def health():
     """Endpoint de health check"""
     return jsonify({'status': 'ok', 'message': 'API está funcionando'})
 
-
-# Exportar app para Vercel
-# O Vercel procura por 'app' como variável exportada
-# Flask apps são automaticamente detectados pelo @vercel/python
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
